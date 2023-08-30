@@ -1,7 +1,9 @@
-﻿namespace Oxide.Plugins
+using System.Text;
+
+namespace Oxide.Plugins
 {
-    [Info("ServerPop", "Mabel", "1.0.2"), Description("Show server pop in chat with !pop trigger.")]
-    class ServerPop : CovalencePlugin
+    [Info("ServerPop", "Mabel", "1.0.3"), Description("Show server pop in chat with !pop trigger.")]
+    class ServerPop : RustPlugin
     {
         private bool showOnlinePlayers;
         private bool showSleepingPlayers;
@@ -11,14 +13,18 @@
         private string chatPrefix = "<size=16><color=#FFA500>| ServerPop |</color></size>";
         private string valueColorHex = "#FFA500";
 
+        private ulong customSteamID = 0;
+
         protected override void LoadDefaultConfig()
         {
+            Config.Clear();
             Config["ShowOnlinePlayers"] = true;
             Config["ShowSleepingPlayers"] = true;
             Config["ShowJoiningPlayers"] = true;
             Config["ShowQueuedPlayers"] = true;
             Config["ChatPrefix"] = chatPrefix;
             Config["ValueColorHex"] = valueColorHex;
+            Config["ChatIconSteamID"] = customSteamID;
             SaveConfig();
         }
 
@@ -36,31 +42,34 @@
 
             chatPrefix = Config.Get<string>("ChatPrefix");
             valueColorHex = Config.Get<string>("ValueColorHex");
+            customSteamID = Config.Get<ulong>("ChatIconSteamID");
         }
 
-        void OnPlayerChat(BasePlayer player, string message)
+        private void OnPlayerChat(BasePlayer player, string message, ConVar.Chat.ChatChannel channel)
         {
             if (message == "!pop")
             {
-                timer.Once(0.1f, () =>
-                {
-                    string popMessage = $"{chatPrefix}\n\n";
-
-                    if (showOnlinePlayers)
-                        popMessage += $"{ColorizeText($"{BasePlayer.activePlayerList.Count} / {ConVar.Server.maxplayers}", valueColorHex)} player's online\n\n";
-
-                    if (showSleepingPlayers)
-                        popMessage += $"{ColorizeText(BasePlayer.sleepingPlayerList.Count.ToString(), valueColorHex)} player's sleeping\n\n";
-
-                    if (showJoiningPlayers)
-                        popMessage += $"{ColorizeText(ServerMgr.Instance.connectionQueue.Joining.ToString(), valueColorHex)} player's joining\n\n";
-
-                    if (showQueuedPlayers)
-                        popMessage += $"{ColorizeText(ServerMgr.Instance.connectionQueue.Queued.ToString(), valueColorHex)} player's queued";
-
-                    player.ChatMessage(popMessage);
-                });
+                SendMessage(player);
             }
+        }
+
+        private void SendMessage(BasePlayer player)
+        {
+            StringBuilder popMessage = new StringBuilder($"{chatPrefix}\n\n");
+
+            if (showOnlinePlayers)
+                popMessage.AppendLine($"{ColorizeText($"{BasePlayer.activePlayerList.Count} / {ConVar.Server.maxplayers}", valueColorHex)} player's online\n");
+
+            if (showSleepingPlayers)
+                popMessage.AppendLine($"{ColorizeText(BasePlayer.sleepingPlayerList.Count.ToString(), valueColorHex)} player's sleeping\n");
+
+            if (showJoiningPlayers)
+                popMessage.AppendLine($"{ColorizeText(ServerMgr.Instance.connectionQueue.Joining.ToString(), valueColorHex)} player's joining\n");
+
+            if (showQueuedPlayers)
+                popMessage.AppendLine($"{ColorizeText(ServerMgr.Instance.connectionQueue.Queued.ToString(), valueColorHex)} player's queued\n");
+
+            Server.Broadcast(popMessage.ToString(), null, customSteamID);
         }
 
         string ColorizeText(string text, string hexColor)
