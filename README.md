@@ -6,6 +6,6 @@ DropInventory.cs - Useful plugin for BattleField type servers, allows players wi
                     Admin chat command: /drop.admin <playername or steamid>
                     Admin console command: drop.admin <playername or steamid>
 
-MLRSCooldown.cs - Prevents players mounting the mlrs after use for x amount of time (default 20 minutes), usful for servers with multiple Mlrs
+MLRSCooldown.cs - Prevents players mounting the mlrs after use for x amount of time (default 20 minutes), useful for servers with multiple Mlrs
 
 ServerPop.cs - Shows server pop in chat with !pop trigger
