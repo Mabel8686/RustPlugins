@@ -37,15 +37,14 @@ namespace Oxide.Plugins
 
         private bool IsOwner(BasePlayer player, MLRS mlrs)
         {
-            ulong ownerID = mlrs.OwnerID; // Get the owner ID of the MLRS
+            ulong ownerID = mlrs.OwnerID;
 
-            // Compare the owner ID with the player's ID
             return ownerID == player.userID;
         }
 
         private bool IsTeamMember(BasePlayer player, MLRS mlrs)
         {
-            ulong ownerID = mlrs.OwnerID; // Get the owner ID of the MLRS
+            ulong ownerID = mlrs.OwnerID;
             var ownerPlayer = BasePlayer.FindByID(ownerID);
 
             if (ownerPlayer != null)
@@ -53,7 +52,6 @@ namespace Oxide.Plugins
                 var ownerTeam = RelationshipManager.ServerInstance.FindPlayersTeam(ownerPlayer.userID);
                 var playerTeam = RelationshipManager.ServerInstance.FindPlayersTeam(player.userID);
 
-                // Check if the owner and player are in the same team
                 return ownerTeam != null && playerTeam != null && ownerTeam.teamID == playerTeam.teamID;
             }
 
