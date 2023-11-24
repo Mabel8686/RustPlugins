@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Oxide.Plugins
 {
-    [Info("ServerPop", "Mabel", "1.0.3"), Description("Show server pop in chat with !pop trigger.")]
+    [Info("ServerPop", "Mabel", "1.0.4"), Description("Show server pop in chat with !pop trigger.")]
     class ServerPop : RustPlugin
     {
         private bool showOnlinePlayers;
@@ -14,6 +14,7 @@ namespace Oxide.Plugins
         private string valueColorHex = "#FFA500";
 
         private ulong customSteamID = 0;
+        private bool globalResponse = true;
 
         protected override void LoadDefaultConfig()
         {
@@ -25,6 +26,7 @@ namespace Oxide.Plugins
             Config["ChatPrefix"] = chatPrefix;
             Config["ValueColorHex"] = valueColorHex;
             Config["ChatIconSteamID"] = customSteamID;
+            Config["GlobalResponse"] = globalResponse; // true = global response, false = player response
             SaveConfig();
         }
 
@@ -43,6 +45,19 @@ namespace Oxide.Plugins
             chatPrefix = Config.Get<string>("ChatPrefix");
             valueColorHex = Config.Get<string>("ValueColorHex");
             customSteamID = Config.Get<ulong>("ChatIconSteamID");
+            
+			object globalResponseObj = Config.Get("GlobalResponse");
+			if (globalResponseObj != null && globalResponseObj is bool)
+			{
+                globalResponse = (bool)globalResponseObj;
+            }
+            else
+            { 
+                globalResponse = true;
+
+                Config["GlobalResponse"] = globalResponse;
+                Config.Save();
+           }				
         }
 
         private void OnPlayerChat(BasePlayer player, string message, ConVar.Chat.ChatChannel channel)
@@ -69,10 +84,17 @@ namespace Oxide.Plugins
             if (showQueuedPlayers)
                 popMessage.AppendLine($"{ColorizeText(ServerMgr.Instance.connectionQueue.Queued.ToString(), valueColorHex)} player's queued\n");
 
-            Server.Broadcast(popMessage.ToString(), null, customSteamID);
+            if (globalResponse)
+            {
+                Server.Broadcast(popMessage.ToString(), null, customSteamID);
+            }
+            else
+            {
+                player.ChatMessage(popMessage.ToString());
+            }
         }
 
-        string ColorizeText(string text, string hexColor)
+        string ColorizeText(string text, string hexColor) 
         {
             return $"<color={hexColor}>{text}</color>";
         }
