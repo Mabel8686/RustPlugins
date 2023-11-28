@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Oxide.Plugins
 {
-    [Info("NPCGifts", "Mabel", "1.0.0")]
+    [Info("NPCGifts", "Mabel", "1.0.1")]
     class NPCGifts : RustPlugin
     {
         private class ContainerData
@@ -13,6 +13,7 @@ namespace Oxide.Plugins
             public string Prefab { get; set; }
             public float SpawnChance { get; set; }
             public bool IsEnabled { get; set; }
+            public string Permission { get; set; }
         }
 
         private class CooldownData
@@ -37,19 +38,22 @@ namespace Oxide.Plugins
                 {
                     ["Prefab"] = "assets/prefabs/misc/xmas/sleigh/presentdrop.prefab",
                     ["SpawnChance"] = 0.5f,
-                    ["IsEnabled"] = true
+                    ["IsEnabled"] = true,
+                    ["Permission"] = "npcgifts.example1"
                 },
                 new Dictionary<string, object>
                 {
                     ["Prefab"] = "assets/prefabs/missions/portal/proceduraldungeon/xmastunnels/loot/xmastunnellootbox.prefab",
                     ["SpawnChance"] = 0.5f,
-                    ["IsEnabled"] = true
+                    ["IsEnabled"] = true,
+                    ["Permission"] = "npcgifts.example2"
                 },
                 new Dictionary<string, object>
                 {
                     ["Prefab"] = "assets/prefabs/misc/xmas/giftbox/giftbox_loot.prefab",
                     ["SpawnChance"] = 0.5f,
-                    ["IsEnabled"] = true
+                    ["IsEnabled"] = true,
+                    ["Permission"] = "npcgifts.example3"
                 }
             };
             Config["CooldownDurationMinutes"] = cooldownDurationMinutes;
@@ -66,7 +70,23 @@ namespace Oxide.Plugins
             cooldownDurationMinutes = Convert.ToSingle(Config["CooldownDurationMinutes"]);
             random = new System.Random();
 
+            CheckAndCreatePermissions();
+
             timer.Once(300f, () => CleanupContainers());
+        }
+
+        private void CheckAndCreatePermissions()
+        {
+            foreach (var containerData in containerList)
+            {
+                if (!string.IsNullOrEmpty(containerData.Permission))
+                {
+                    if (!permission.PermissionExists(containerData.Permission, this))
+                    {
+                        permission.RegisterPermission(containerData.Permission, this);
+                    }
+                }
+            }
         }
 
         void LoadConfigValues()
@@ -74,12 +94,33 @@ namespace Oxide.Plugins
             object configObject = Config["Containers"];
             if (configObject is List<object>)
             {
-                containerList = (configObject as List<object>).Select(x => new ContainerData
+                containerList = (configObject as List<object>).Select(x =>
                 {
-                    Prefab = Convert.ToString(((Dictionary<string, object>)x)["Prefab"]),
-                    SpawnChance = Convert.ToSingle(((Dictionary<string, object>)x)["SpawnChance"]),
-                    IsEnabled = Convert.ToBoolean(((Dictionary<string, object>)x)["IsEnabled"])
+                    var containerData = new ContainerData
+                    {
+                        Prefab = Convert.ToString(((Dictionary<string, object>)x).GetValueOrDefault("Prefab", string.Empty)),
+                        SpawnChance = Convert.ToSingle(((Dictionary<string, object>)x).GetValueOrDefault("SpawnChance", 0.0f)),
+                        IsEnabled = Convert.ToBoolean(((Dictionary<string, object>)x).GetValueOrDefault("IsEnabled", false)),
+                        Permission = Convert.ToString(((Dictionary<string, object>)x).GetValueOrDefault("Permission", string.Empty))
+                    };
+
+                    return containerData;
                 }).ToList();
+
+                if (containerList.Any(c => string.IsNullOrEmpty(c.Permission)))
+                {
+                    foreach (var containerData in containerList)
+                    {
+                        if (string.IsNullOrEmpty(containerData.Permission))
+                        {
+                            containerData.Permission = $"npcgifts.example{containerList.IndexOf(containerData) + 1}";
+                        }
+                    }
+
+                    Config["Containers"] = containerList.Cast<object>().ToList();
+                    SaveConfig();
+                    Puts("Added missing permissions to config.");
+                }
             }
             else
             {
@@ -125,16 +166,19 @@ namespace Oxide.Plugins
             {
                 if (random.NextDouble() <= containerData.SpawnChance)
                 {
-                    BaseEntity container = GameManager.server.CreateEntity(containerData.Prefab, position);
-
-                    if (container != null)
+                    if (string.IsNullOrEmpty(containerData.Permission) || permission.UserHasPermission(playerID.ToString(), containerData.Permission))
                     {
-                        container.Spawn();
-                        spawnedContainers.Add(container);
-                        BasePlayer player = BasePlayer.FindByID(playerID);
-                        if (player != null)
+                        BaseEntity container = GameManager.server.CreateEntity(containerData.Prefab, position);
+
+                        if (container != null)
                         {
-                            SendChatMessage(player, ReplacePlaceholders(containerReceivedMessage, player));
+                            container.Spawn();
+                            spawnedContainers.Add(container);
+                            BasePlayer player = BasePlayer.FindByID(playerID);
+                            if (player != null)
+                            {
+                                SendChatMessage(player, ReplacePlaceholders(containerReceivedMessage, player));
+                            }
                         }
                     }
 
