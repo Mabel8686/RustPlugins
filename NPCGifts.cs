@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Oxide.Plugins
 {
-    [Info("NPCGifts", "Mabel", "1.0.1")]
+    [Info("NPCGifts", "Mabel", "1.0.2")]
     class NPCGifts : RustPlugin
     {
         private class ContainerData
@@ -130,13 +130,13 @@ namespace Oxide.Plugins
                 LoadConfigValues();
             }
 
-            containerReceivedMessage = Config.Get("ContainerReceivedMessage", " :santahat: Merry Christmas <color=#4A95CC>{player.name}</color> from <color=#4A95CC>{server.name}</color> :santahat:") as string;
+            containerReceivedMessage = Config.Get("ContainerReceivedMessage") as string;
             if (containerReceivedMessage == null)
             {
                 containerReceivedMessage = " :santahat: Merry Christmas <color=#4A95CC>{player.name}</color> from <color=#4A95CC>{server.name}</color> :santahat:";
                 Config["ContainerReceivedMessage"] = containerReceivedMessage;
                 SaveConfig();
-            }
+            }	
         }
 
         private void OnEntityDeath(BaseCombatEntity entity, HitInfo hitInfo)
