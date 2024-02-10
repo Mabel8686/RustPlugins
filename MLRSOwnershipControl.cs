@@ -4,13 +4,13 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("MLRSOwnershipControl", "Mabel", "1.0.0")]
+    [Info("MLRSOwnership", "Mabel", "1.0.1")]
     [Description("Prevents players who are not the owner or part of the same team as the owner of the MLRS from mounting it.")]
-    class MLRSOwnershipControl : RustPlugin
+    class MLRSOwnership : RustPlugin
     {
         void Init()
         {
-            permission.RegisterPermission("mlrsownershipcontrol.bypass", this);
+            permission.RegisterPermission("mlrsownership.bypass", this);
         }
 
         object CanMountEntity(BasePlayer player, MLRS mlrs)
@@ -18,13 +18,30 @@ namespace Oxide.Plugins
             if (player == null || mlrs == null || !player.IsConnected || !player.IsAlive())
                 return null;
 
-            if (!IsOwner(player, mlrs) && !IsTeamMember(player, mlrs))
+            bool hasRaidPermission = HasPermission(player, "raidablebases.expertraid");
+			
+			if (mlrs.OwnerID == 0)
+			{
+				if (!hasRaidPermission)
+				{
+					SendReply(player, " You need to complete <color=#4A95CC>Expert Raids</color> to use the <color=red>MLRS</color>.");
+				    return false;
+				}
+			  return null;
+			}
+			
+            bool isOwnerOrTeam = IsOwner(player, mlrs) || IsTeamMember(player, mlrs);
+
+            if (!isOwnerOrTeam)
             {
-                if (!HasPermission(player, "mlrsownershipcontrol.bypass"))
-                {
-                    SendReply(player, " You can only mount your own/teams <color=red>MLRS</color>");
-                    return false;
-                }
+                SendReply(player, " You can only mount your own/teams <color=red>MLRS</color>.");
+                return false;
+            }
+
+            if (!hasRaidPermission)
+            {
+                SendReply(player, " You need to complete <color=#4A95CC>Expert Raids</color> to use the <color=red>MLRS</color>.");
+                return false;
             }
 
             return null;
@@ -38,7 +55,6 @@ namespace Oxide.Plugins
         private bool IsOwner(BasePlayer player, MLRS mlrs)
         {
             ulong ownerID = mlrs.OwnerID;
-
             return ownerID == player.userID;
         }
 
