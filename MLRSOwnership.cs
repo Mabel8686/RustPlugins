@@ -24,7 +24,7 @@ namespace Oxide.Plugins
 			{
 				if (!hasRaidPermission)
 				{
-					SendReply(player, " You need to complete <color=#4A95CC>Expert Raids</color> to use the <color=red>MLRS</color>.");
+					SendReply(player, $" <color=#4A95CC>{player.displayName}</color> you need to complete <color=#4A95CC>Expert Raids</color> to use the <color=red>MLRS</color>.");
 				    return false;
 				}
 			  return null;
@@ -34,13 +34,13 @@ namespace Oxide.Plugins
 
             if (!isOwnerOrTeam)
             {
-                SendReply(player, " You can only mount your own/teams <color=red>MLRS</color>.");
+                SendReply(player, $" <color=#4A95CC>{player.displayName}</color> you can only mount your own/teams <color=red>MLRS</color>.");
                 return false;
             }
 
             if (!hasRaidPermission)
             {
-                SendReply(player, " You need to complete <color=#4A95CC>Expert Raids</color> to use the <color=red>MLRS</color>.");
+                SendReply(player, $" <color=#4A95CC>{player.displayName}</color> you need to complete <color=#4A95CC>Expert Raids</color> to use the <color=red>MLRS</color>.");
                 return false;
             }
 
