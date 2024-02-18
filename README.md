@@ -15,3 +15,5 @@
 **NoLockOnRockets.cs** - prevents players without the bypass permission from putting lock on rockets in there inventory
 
 **NPCGifts.cs** - spawns gifts on npc death, can configure the drop rate and cooldown for the gifts withe personalised message to the player
+
+**EventMessages.cs** - adds game tip event messages for servers who are changing TOD or skipping night and are manually spawning the default events with AutomatedEvents or similar 
