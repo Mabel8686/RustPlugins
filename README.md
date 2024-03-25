@@ -16,4 +16,6 @@
 
 **NPCGifts.cs** - spawns gifts on npc death, can configure the drop rate and cooldown for the gifts withe personalised message to the player
 
-**EventMessages.cs** - adds game tip event messages for servers who are changing TOD or skipping night and are manually spawning the default events with AutomatedEvents or similar 
+**EventMessages.cs** - adds game tip event messages for servers who are changing TOD or skipping night and are manually spawning the default events with AutomatedEvents or similar
+
+**MapNameTimers.cs** - Displays map name, wipe timer and purge timers in the map name field  (Timers work off Epoch timestamp, use https://www.epochconverter.com/ to set your Epoch timestamp)
