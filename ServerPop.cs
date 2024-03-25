@@ -6,11 +6,12 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Server Pop", "Mabel", "1.0.5")]
+    [Info("Server Pop", "Mabel", "1.0.6")]
     [Description("Show server pop in chat with !pop trigger.")]
     public class ServerPop : RustPlugin
     {
         static Configuration config;
+        static Dictionary<ulong, DateTime> cooldowns = new Dictionary<ulong, DateTime>();
 
         public class Configuration
         {
@@ -44,6 +45,9 @@ namespace Oxide.Plugins
             [JsonProperty(PropertyName = "Show Welcome Message")]
             public bool showWelcomeMessage { get; set; }
 
+            [JsonProperty(PropertyName = "Cooldown (seconds)")]
+            public int cooldownSeconds { get; set; } = 60;
+
             public static Configuration DefaultConfig()
             {
                 return new Configuration
@@ -57,7 +61,8 @@ namespace Oxide.Plugins
                     showJoiningPlayers = true,
                     showQueuedPlayers = true,
                     showPopOnConnect = false,
-                    showWelcomeMessage = false
+                    showWelcomeMessage = false,
+                    cooldownSeconds = 60
                 };
             }
         }
@@ -67,6 +72,7 @@ namespace Oxide.Plugins
             base.LoadConfig();
             try
             {
+				LoadDefaultConfig();
                 config = Config.ReadObject<Configuration>();
                 if (config == null) LoadDefaultConfig();
                 SaveConfig();
@@ -77,7 +83,7 @@ namespace Oxide.Plugins
                 PrintWarning("Creating new configuration file.....");
                 LoadDefaultConfig();
             }
-        }
+        }	
 
         protected override void LoadDefaultConfig() => config = Configuration.DefaultConfig();
         protected override void SaveConfig() => Config.WriteObject(config);
@@ -90,7 +96,8 @@ namespace Oxide.Plugins
                 ["Sleeping"] = "{0} players sleeping",
                 ["Joining"] = "{0} players joining",
                 ["Queued"] = "{0} players queued",
-                ["WelcomeMessage"] = "Welcome to the server {0}!"
+                ["WelcomeMessage"] = "Welcome to the server {0}!",
+                ["CooldownMessage"] = "You must wait {0} seconds before using this command again."
             }, this);
         }
 
@@ -118,8 +125,27 @@ namespace Oxide.Plugins
         {
             if (message.ToLower() == "!pop")
             {
-                SendMessage(player);
+                if (CanUseTrigger(player.userID))
+                {
+                    SendMessage(player);
+                    cooldowns[player.userID] = DateTime.Now.AddSeconds(config.cooldownSeconds);
+                }
+                else
+                {
+                    TimeSpan remainingCooldown = cooldowns[player.userID] - DateTime.Now;
+                    string cooldownMessage = lang.GetMessage("CooldownMessage", this);
+                    cooldownMessage = string.Format(cooldownMessage, ApplyColor(Math.Round(remainingCooldown.TotalSeconds).ToString(), config.valueColor));
+                    Player.Message(player, cooldownMessage, config.chatSteamID);
+                }
             }
+        }
+
+        private bool CanUseTrigger(ulong userID)
+        {
+            if (!cooldowns.ContainsKey(userID))
+                return true;
+
+            return cooldowns[userID] <= DateTime.Now;
         }
 
         private void SendMessage(BasePlayer player)
