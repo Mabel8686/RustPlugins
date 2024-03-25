@@ -5,7 +5,7 @@ using Steamworks;
 
 namespace Oxide.Plugins
 {
-    [Info("Map Name & Timers", "Mabel", "1.0.1")]
+    [Info("Map Name & Timers", "Mabel", "1.0.2")]
     [Description("Displays map name, wipe timer and purge timers in the map name field.")]
     public class MapNameTimers : RustPlugin
     {
@@ -74,11 +74,15 @@ namespace Oxide.Plugins
                 TimeSpan purgeTimeSpan = TimeSpan.FromSeconds(_config.PurgeTimerEpochTime - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 nameToSet += $" {purgeTimeSpan.Days}d {purgeTimeSpan.Hours}h";
             }
-
-            _currentMapNameIndex = (_currentMapNameIndex + 1) % _mapNameCycle.Length;
 			
-            _cachedMapName = nameToSet;
-            SteamServer.MapName = _cachedMapName;
+			_cachedMapName = nameToSet;  
+			
+			timer.Once(0.1f, () =>
+			{
+				SteamServer.MapName = _cachedMapName;
+			});
+			
+            _currentMapNameIndex = (_currentMapNameIndex + 1) % _mapNameCycle.Length;
         }
     }
 }
