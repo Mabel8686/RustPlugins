@@ -5,7 +5,7 @@ using Steamworks;
 
 namespace Oxide.Plugins
 {
-    [Info("Map Name & Timers", "Mabel", "1.0.3")]
+    [Info("Map Name Timers", "Mabel", "1.0.3")]
     [Description("Displays map name, wipe timer and purge timers in the map name field.")]
     public class MapNameTimers : RustPlugin
     {
