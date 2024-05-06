@@ -16,6 +16,4 @@
 
 **NPCGifts.cs** - spawns gifts on npc death, can configure the drop rate and cooldown for the gifts withe personalised message to the player
 
-**MapNameTimers.cs** - Displays map name, wipe timer and purge timers in the map name field  (Timers work off Epoch timestamp, use https://www.epochconverter.com/ to set your Epoch timestamp)
-
 **BlackjackFix.cs** - Fixes Blackjack spawned in wrong rotation
