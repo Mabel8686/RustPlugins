@@ -17,3 +17,5 @@
 **NPCGifts.cs** - spawns gifts on npc death, can configure the drop rate and cooldown for the gifts withe personalised message to the player
 
 **BlackjackFix.cs** - Fixes Blackjack spawned in wrong rotation
+
+**DisableRecycleEfficiency.cs** - Sets all recyclers back to the old efficiency (UI Remains as its client side)
