@@ -14,7 +14,7 @@
 
 **NoLockOnRockets.cs** - prevents players without the bypass permission from putting lock on rockets in there inventory
 
-**NPCGifts.cs** - spawns gifts on npc death, can configure the drop rate and cooldown for the gifts withe personalised message to the player
+**NPCGifts.cs** - spawns gifts on npc death, can configure the drop rate and cooldown for the gifts with personalised message to the player
 
 **BlackjackFix.cs** - Fixes Blackjack spawned in wrong rotation
 
