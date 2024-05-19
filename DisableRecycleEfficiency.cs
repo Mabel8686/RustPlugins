@@ -11,6 +11,7 @@ namespace Oxide.Plugins
             foreach (var recycler in UnityEngine.Object.FindObjectsOfType<Recycler>())
             {
                 DisableEfficiency(recycler);
+                recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
             }
         }
 
@@ -19,6 +20,7 @@ namespace Oxide.Plugins
             if (entity is Recycler recycler)
             {
                 DisableEfficiency(recycler);
+                recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
             }
         }
 
