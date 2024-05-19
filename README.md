@@ -22,7 +22,7 @@
 
 
 
-                                                                            **NPC Gifts**
+                                                               **NPC Gifts**
  
 
 The NPC Gifts plugin provides a system where players can receive random gifts upon killing NPCs.  The gifts are spawned as containers, and there are customizable settings for cooldowns, spawn chances, and permissions.                                                                                                                    
@@ -92,17 +92,17 @@ Permission-based access to specific container types.
 
 **Grant Permissions:** Use the following commands to grant permissions to players or groups:
  
-```
+```cs
 oxide.grant user <username> <permission>
 
 oxide.grant group <groupname> <permission>
 ```
 
 **Example:**
-
-`oxide.grant user Mabel npcgifts.example1`
+```cs
+oxide.grant user Mabel npcgifts.example1
+```
  
-
 **Default Configuration**
 ```cs
 
