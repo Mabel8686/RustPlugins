@@ -1,4 +1,8 @@
+using ConVar;
+using Network;
 using Newtonsoft.Json;
+using Oxide.Core.Libraries.Covalence;
+using Oxide.Game.Rust.Libraries;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -6,8 +10,9 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Server Pop", "Mabel", "1.0.6")]
+    [Info("Server Pop", "Mabel", "1.0.8")]
     [Description("Show server pop in chat with !pop trigger.")]
+
     public class ServerPop : RustPlugin
     {
         static Configuration config;
@@ -15,18 +20,52 @@ namespace Oxide.Plugins
 
         public class Configuration
         {
+            [JsonProperty(PropertyName = "Cooldown Settings")]
+            public CooldownSettings CooldownSettings { get; set; }
+
+            [JsonProperty(PropertyName = "Chat Settings")]
+            public ChatSettings ChatSettings { get; set; }
+
+            [JsonProperty(PropertyName = "Messgae Settings")]
+            public MessageSettings MessageSettings { get; set; }
+
+            [JsonProperty(PropertyName = "Response Settings")]
+            public ResponseSettings ResponseSettings { get; set; }
+
+            [JsonProperty(PropertyName = "Connect Settings")]
+            public ConnectSettings ConnectSettings { get; set; }
+
+            public Core.VersionNumber Version { get; set; }
+        }
+        public class CooldownSettings
+        {
+            [JsonProperty(PropertyName = "Cooldown (seconds)")]
+            public int cooldownSeconds { get; set; } = 60;
+        }
+        public class ChatSettings
+        {
             [JsonProperty(PropertyName = "Chat Prefix")]
             public string chatPrefix { get; set; }
 
-            [JsonProperty(PropertyName = "Value Color (HEX)")]
-            public string valueColor { get; set; }
-
             [JsonProperty(PropertyName = "Chat Icon SteamID")]
             public ulong chatSteamID { get; set; } = 76561199216745239;
-
-            [JsonProperty(PropertyName = "GlobalResponse (true = global response, false = player response)")]
+        }
+        public class MessageSettings
+        {
+            [JsonProperty(PropertyName = "Global Response (true = global response, false = player response)")]
             public bool globalResponse { get; set; }
 
+            [JsonProperty(PropertyName = "Use Chat Response")]
+            public bool chat { get; set; }
+
+            [JsonProperty(PropertyName = "Use Game Tip Response")]
+            public bool toast { get; set; }
+
+            [JsonProperty(PropertyName = "Value Color (HEX)")]
+            public string valueColor { get; set; }
+        }
+        public class ResponseSettings
+        {
             [JsonProperty(PropertyName = "Show Online Players")]
             public bool showOnlinePlayers { get; set; }
 
@@ -38,54 +77,87 @@ namespace Oxide.Plugins
 
             [JsonProperty(PropertyName = "Show Queued Players")]
             public bool showQueuedPlayers { get; set; }
-
+        }
+        public class ConnectSettings
+        {
             [JsonProperty(PropertyName = "Show Pop On Connect")]
             public bool showPopOnConnect { get; set; }
 
             [JsonProperty(PropertyName = "Show Welcome Message")]
             public bool showWelcomeMessage { get; set; }
-
-            [JsonProperty(PropertyName = "Cooldown (seconds)")]
-            public int cooldownSeconds { get; set; } = 60;
-
-            public static Configuration DefaultConfig()
+        }
+        public static Configuration DefaultConfig()
+        {
+            return new Configuration
             {
-                return new Configuration
+                CooldownSettings = new CooldownSettings()
+                {
+                    cooldownSeconds = 60,
+                },
+                ChatSettings = new ChatSettings()
                 {
                     chatPrefix = "<size=16><color=#FFA500>| Server Pop |</color></size>",
-                    valueColor = "#FFA500",
                     chatSteamID = 76561199216745239,
+                },
+                MessageSettings = new MessageSettings()
+                {
                     globalResponse = true,
+                    chat = false,
+                    toast = true,
+                    valueColor = "#FFA500",
+                },
+                ResponseSettings = new ResponseSettings()
+                {
                     showOnlinePlayers = true,
                     showSleepingPlayers = true,
                     showJoiningPlayers = true,
                     showQueuedPlayers = true,
+                },
+                ConnectSettings = new ConnectSettings()
+                {
                     showPopOnConnect = false,
                     showWelcomeMessage = false,
-                    cooldownSeconds = 60
-                };
-            }
+                },
+             Version = new Core.VersionNumber()
+            };
         }
-
         protected override void LoadConfig()
         {
             base.LoadConfig();
             try
             {
-				LoadDefaultConfig();
                 config = Config.ReadObject<Configuration>();
                 if (config == null) LoadDefaultConfig();
                 SaveConfig();
+
+                if (config.Version < Version)
+                    UpdateConfig();
+
+                Config.WriteObject(config, true);
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                PrintWarning("Creating new configuration file.....");
+                PrintWarning("Creating new configuration file....");
                 LoadDefaultConfig();
             }
-        }	
+        }
 
-        protected override void LoadDefaultConfig() => config = Configuration.DefaultConfig();
+        private void UpdateConfig()
+        {
+            PrintWarning("Config update detected! Updating config values...");
+
+            Configuration baseConfig = DefaultConfig();
+
+            if (config.Version < new Core.VersionNumber(1, 0, 6))
+                config = baseConfig;
+
+            config.Version = Version;
+
+            PrintWarning("Config update completed!");
+        }
+
+        protected override void LoadDefaultConfig() => config = DefaultConfig();
         protected override void SaveConfig() => Config.WriteObject(config);
 
         protected override void LoadDefaultMessages()
@@ -103,100 +175,169 @@ namespace Oxide.Plugins
 
         private void OnPlayerConnected(BasePlayer player)
         {
-            if (config.showWelcomeMessage)
+            List<string> toastMessages = new List<string>();
+
+            if (config.ConnectSettings.showWelcomeMessage)
             {
                 string welcomeMessage = lang.GetMessage("WelcomeMessage", this);
 
                 if (!string.IsNullOrEmpty(welcomeMessage))
                 {
-                    welcomeMessage = string.Format(welcomeMessage, player.displayName);
+                    welcomeMessage = string.Format(welcomeMessage, ApplyColor(player.displayName.ToString(), config.MessageSettings.valueColor));
 
-                    Player.Message(player, welcomeMessage, config.chatSteamID);
+                    if (config.MessageSettings.chat)
+                    {
+                        Player.Message(player, welcomeMessage, config.ChatSettings.chatSteamID);
+                    }
+                    else if (config.MessageSettings.toast)
+                    {
+                        player.ShowToast(GameTip.Styles.Blue_Long, welcomeMessage);
+                    }
                 }
             }
-
-            if (config.showPopOnConnect)
+            
+            if (config.ConnectSettings.showPopOnConnect && config.MessageSettings.chat)
             {
                 SendMessage(player);
             }
+            else if(config.ConnectSettings.showPopOnConnect && config.MessageSettings.toast && toastMessages.Count > 0)
+            {
+                string toastMessage = string.Join("  ", toastMessages);
+                player.ShowToast(GameTip.Styles.Blue_Long, toastMessage);
+            }
         }
 
-        private void OnPlayerChat(BasePlayer player, string message, ConVar.Chat.ChatChannel channel)
+        private void OnPlayerChat(BasePlayer player, string message, Chat.ChatChannel channel)
         {
             if (message.ToLower() == "!pop")
             {
                 if (CanUseTrigger(player.userID))
                 {
                     SendMessage(player);
-                    cooldowns[player.userID] = DateTime.Now.AddSeconds(config.cooldownSeconds);
+                    cooldowns[player.userID] = DateTime.Now.AddSeconds(config.CooldownSettings.cooldownSeconds);
+                    return;
                 }
                 else
                 {
                     TimeSpan remainingCooldown = cooldowns[player.userID] - DateTime.Now;
                     string cooldownMessage = lang.GetMessage("CooldownMessage", this);
-                    cooldownMessage = string.Format(cooldownMessage, ApplyColor(Math.Round(remainingCooldown.TotalSeconds).ToString(), config.valueColor));
-                    Player.Message(player, cooldownMessage, config.chatSteamID);
+                    cooldownMessage = string.Format(cooldownMessage, ApplyColor(Math.Round(remainingCooldown.TotalSeconds).ToString(), config.MessageSettings.valueColor));
+
+                    if (config.MessageSettings.chat)
+                    {
+                        Player.Message(player, cooldownMessage, config.ChatSettings.chatSteamID);
+                    }
+                    else if (config.MessageSettings.toast)
+                    {
+                        player.ShowToast(GameTip.Styles.Blue_Long, cooldownMessage);
+                    }
+                 return;
                 }
             }
         }
-
         private bool CanUseTrigger(ulong userID)
         {
             if (!cooldowns.ContainsKey(userID))
                 return true;
-
             return cooldowns[userID] <= DateTime.Now;
         }
-
         private void SendMessage(BasePlayer player)
         {
-            StringBuilder popMessage = new StringBuilder($"{config.chatPrefix}\n\n");
+            StringBuilder popMessage = new StringBuilder($"{config.ChatSettings.chatPrefix}\n\n");
 
-            if (config.showOnlinePlayers)
+            List<string> toastMessages = new List<string>();
+
+            if (config.ResponseSettings.showOnlinePlayers)
             {
                 string onlinePlayersText = $"{BasePlayer.activePlayerList.Count} / {ConVar.Server.maxplayers}";
                 string onlineMessage = $"{lang.GetMessage("Online", this)}";
-                onlineMessage = string.Format(onlineMessage, ApplyColor(BasePlayer.activePlayerList.Count.ToString(), config.valueColor), ApplyColor(ConVar.Server.maxplayers.ToString(), config.valueColor));
+                onlineMessage = string.Format(onlineMessage, ApplyColor(BasePlayer.activePlayerList.Count.ToString(), config.MessageSettings.valueColor), ApplyColor(ConVar.Server.maxplayers.ToString(), config.MessageSettings.valueColor));
                 popMessage.AppendLine($"{onlineMessage}\n");
+                toastMessages.Add(onlineMessage);
             }
 
-            if (config.showSleepingPlayers)
+            if (config.ResponseSettings.showSleepingPlayers)
             {
                 string sleepingPlayersText = BasePlayer.sleepingPlayerList.Count.ToString();
                 string sleepingMessage = $"{lang.GetMessage("Sleeping", this)}";
-                sleepingMessage = string.Format(sleepingMessage, ApplyColor(BasePlayer.sleepingPlayerList.Count.ToString(), config.valueColor));
+                sleepingMessage = string.Format(sleepingMessage, ApplyColor(BasePlayer.sleepingPlayerList.Count.ToString(), config.MessageSettings.valueColor));
                 popMessage.AppendLine($"{sleepingMessage}\n");
+                toastMessages.Add(sleepingMessage);
             }
 
-            if (config.showJoiningPlayers)
+            if (config.ResponseSettings.showJoiningPlayers)
             {
                 string joiningPlayersText = ServerMgr.Instance.connectionQueue.Joining.ToString();
                 string joiningMessage = $"{lang.GetMessage("Joining", this)}";
-                joiningMessage = string.Format(joiningMessage, ApplyColor(ServerMgr.Instance.connectionQueue.Joining.ToString(), config.valueColor));
+                joiningMessage = string.Format(joiningMessage, ApplyColor(ServerMgr.Instance.connectionQueue.Joining.ToString(), config.MessageSettings.valueColor));
                 popMessage.AppendLine($"{joiningMessage}\n");
+                toastMessages.Add(joiningMessage);
             }
 
-            if (config.showQueuedPlayers)
+            if (config.ResponseSettings.showQueuedPlayers)
             {
                 string queuedPlayersText = ServerMgr.Instance.connectionQueue.Queued.ToString();
                 string queuedMessage = $"{lang.GetMessage("Queued", this)}";
-                queuedMessage = string.Format(queuedMessage, ApplyColor(ServerMgr.Instance.connectionQueue.Queued.ToString(), config.valueColor));
+                queuedMessage = string.Format(queuedMessage, ApplyColor(ServerMgr.Instance.connectionQueue.Queued.ToString(), config.MessageSettings.valueColor));
                 popMessage.AppendLine($"{queuedMessage}\n");
+                toastMessages.Add(queuedMessage);
             }
 
-            if (config.globalResponse)
+            if (config.MessageSettings.globalResponse && config.MessageSettings.chat)
             {
-                Server.Broadcast(popMessage.ToString(), null, config.chatSteamID);
+                Server.Broadcast(popMessage.ToString(), null, config.ChatSettings.chatSteamID);
             }
-            else
+
+            if (config.MessageSettings.chat)
             {
-                Player.Message(player, popMessage.ToString(), null, config.chatSteamID);
+                Player.Message(player, popMessage.ToString(), null, config.ChatSettings.chatSteamID);
+            }
+
+            if (config.MessageSettings.globalResponse && config.MessageSettings.toast && toastMessages.Count > 0)
+            {
+                SendToastToActivePlayers(toastMessages);
+            }
+
+            if (config.MessageSettings.toast && toastMessages.Count > 0)
+            {
+                string toastMessage = string.Join("  ", toastMessages);
+                player.ShowToast(GameTip.Styles.Blue_Long, toastMessage);
+            }
+        }
+
+        void SendToastToActivePlayers(List<string> toastMessages)
+        {
+            foreach (BasePlayer player in BasePlayer.activePlayerList)
+            {
+                if (player != null)
+                {
+                    string toastMessage = string.Join("  ", toastMessages);
+                    player.ShowToast(GameTip.Styles.Blue_Long, toastMessage);
+                }
             }
         }
 
         private string ApplyColor(string text, string hexColor)
         {
             return $"<color={hexColor}>{text}</color>";
+        }
+
+        private object OnBetterChat(Dictionary<string, object> messageData) => Filter(messageData);
+
+        private object Filter(Dictionary<string, object> messageData)
+        {
+            IPlayer player = (IPlayer)messageData["Player"];
+
+            if (RemoveMessage((string)messageData["Message"]))
+            {
+                messageData["CancelOption"] = 2;
+            }
+
+            return messageData;
+        }
+        private bool RemoveMessage(string message)
+        {
+            return message.ToLower().Contains("!pop");
         }
     }
 }
