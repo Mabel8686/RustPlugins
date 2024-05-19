@@ -1,21 +1,21 @@
 # RustPlugins
 
-# **DropInventory** - Useful plugin for BattleField type servers, allows players with permission to drop there inventory to claim kits faster or can be used by Admins to clear players inventory 
-                    ```cs
-                    Players chat command: /drop
-                    Admin chat command: /drop.admin <playername or steamid>
-                    Admin console command: drop.admin <playername or steamid>
-                    ```
+**DropInventory** - Useful plugin for BattleField type servers, allows players with permission to drop there inventory to claim kits faster or can be used by Admins to clear players inventory 
+ ```cs
+Players chat command: /drop
+Admin chat command: /drop.admin <playername or steamid>
+Admin console command: drop.admin <playername or steamid>
+```
 
-# **MLRSCooldown** - Prevents players mounting the mlrs after use for x amount of time (default 20 minutes), useful for servers with multiple Mlrs
+**MLRSCooldown** - Prevents players mounting the mlrs after use for x amount of time (default 20 minutes), useful for servers with multiple Mlrs
 
-# **MLRSOwnership** - Prevents players who are not the owner or a team member of the owner from using the MLRS, useful for servers with multiple Mlrs
+**MLRSOwnership** - Prevents players who are not the owner or a team member of the owner from using the MLRS, useful for servers with multiple Mlrs
 
-# **NoLockOnRockets** - prevents players without the bypass permission from putting lock on rockets in there inventory
+**NoLockOnRockets** - prevents players without the bypass permission from putting lock on rockets in there inventory
 
-# **BlackjackFix** - Fixes Blackjack spawned in wrong rotation
+**BlackjackFix** - Fixes Blackjack spawned in wrong rotation
 
-# **DisableRecycleEfficiency** - Sets all recyclers back to the old efficiency (UI Remains as its client side)
+**DisableRecycleEfficiency** - Sets all recyclers back to the old efficiency (UI Remains as its client side)
 
 
 
