@@ -1,6 +1,6 @@
 namespace Oxide.Plugins
 {
-    [Info("DisableRecycleEfficiency", "Mabel", "1.0.1")]
+    [Info("Disable Recycle Efficiency", "Mabel", "1.0.1")]
     [Description("Disables the recycle efficiency and returns recyclers back to green.")]
     public class DisableRecycleEfficiency : RustPlugin
     {
@@ -8,10 +8,13 @@ namespace Oxide.Plugins
 
         private void OnServerInitialized()
         {
-            foreach (var recycler in UnityEngine.Object.FindObjectsOfType<Recycler>())
+            foreach (var entity in BaseNetworkable.serverEntities)
             {
-                DisableEfficiency(recycler);
-                recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
+                if (entity is Recycler recycler)
+                {
+                    DisableEfficiency(recycler);
+                    recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
+                }
             }
         }
 
