@@ -2,6 +2,7 @@ namespace Oxide.Plugins
 {
     [Info("Disable Recycle Efficiency", "Mabel", "1.0.1")]
     [Description("Disables the recycle efficiency and returns recyclers back to green.")]
+    
     public class DisableRecycleEfficiency : RustPlugin
     {
         private const float DisabledRecycleEfficiency = 0.5f;
