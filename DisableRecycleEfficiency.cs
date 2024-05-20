@@ -1,11 +1,15 @@
+using System.Collections.Generic;
+
 namespace Oxide.Plugins
 {
-    [Info("Disable Recycle Efficiency", "Mabel", "1.0.1")]
-    [Description("Disables the recycle efficiency.")]
+    [Info("Disable Recycle Efficiency", "Mabel", "1.0.2")]
+    [Description("Disables the recycle efficiency and returns recyclers back to green.")]
 
     public class DisableRecycleEfficiency : RustPlugin
     {
         private const float DisabledRecycleEfficiency = 0.5f;
+
+        private Dictionary<ulong, bool> recyclerOriginalStates = new Dictionary<ulong, bool>();
 
         private void OnServerInitialized()
         {
@@ -13,8 +17,9 @@ namespace Oxide.Plugins
             {
                 if (entity is Recycler recycler)
                 {
+                    recyclerOriginalStates[recycler.net.ID.Value] = recycler.HasFlag(BaseEntity.Flags.Reserved9);
                     DisableEfficiency(recycler);
-                    recycler.SetFlag(BaseEntity.Flags.Reserved9, false);
+                    recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
                 }
             }
         }
@@ -23,8 +28,9 @@ namespace Oxide.Plugins
         {
             if (entity is Recycler recycler)
             {
+                recyclerOriginalStates[recycler.net.ID.Value] = recycler.HasFlag(BaseEntity.Flags.Reserved9);
                 DisableEfficiency(recycler);
-                recycler.SetFlag(BaseEntity.Flags.Reserved9, false);
+                recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
             }
         }
 
@@ -35,7 +41,7 @@ namespace Oxide.Plugins
             recycler.radtownRecycleEfficiency = DisabledRecycleEfficiency;
         }
 
-        void Unload()
+        private void Unload()
         {
             foreach (var entity in BaseNetworkable.serverEntities)
             {
@@ -44,9 +50,14 @@ namespace Oxide.Plugins
                     recycler.recycleEfficiency = 0.6f;
                     recycler.safezoneRecycleEfficiency = 0.4f;
                     recycler.radtownRecycleEfficiency = 0.6f;
-                    recycler.SetFlag(BaseEntity.Flags.Reserved9, true);
+
+                    if (recyclerOriginalStates.TryGetValue(recycler.net.ID.Value, out bool originalState))
+                    {
+                        recycler.SetFlag(BaseEntity.Flags.Reserved9, originalState, true, true);
+                    }
                 }
             }
+        recyclerOriginalStates.Clear();
         }
     }
 }
