@@ -14,7 +14,7 @@ namespace Oxide.Plugins
                 if (entity is Recycler recycler)
                 {
                     DisableEfficiency(recycler);
-                    recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
+                    recycler.SetFlag(BaseEntity.Flags.Reserved9, false);
                 }
             }
         }
@@ -24,7 +24,7 @@ namespace Oxide.Plugins
             if (entity is Recycler recycler)
             {
                 DisableEfficiency(recycler);
-                recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
+                recycler.SetFlag(BaseEntity.Flags.Reserved9, false);
             }
         }
 
@@ -33,6 +33,20 @@ namespace Oxide.Plugins
             recycler.recycleEfficiency = DisabledRecycleEfficiency;
             recycler.safezoneRecycleEfficiency = DisabledRecycleEfficiency;
             recycler.radtownRecycleEfficiency = DisabledRecycleEfficiency;
+        }
+
+        void Unload()
+        {
+            foreach (var entity in BaseNetworkable.serverEntities)
+            {
+                if (entity is Recycler recycler)
+                {
+                    recycler.recycleEfficiency = 0.6f;
+                    recycler.safezoneRecycleEfficiency = 0.4f;
+                    recycler.radtownRecycleEfficiency = 0.6f;
+                    recycler.SetFlag(BaseEntity.Flags.Reserved9, true);
+                }
+            }
         }
     }
 }
