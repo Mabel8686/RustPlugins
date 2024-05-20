@@ -2,8 +2,8 @@ using System.Collections.Generic;
 
 namespace Oxide.Plugins
 {
-    [Info("Disable Recycle Efficiency", "Mabel", "1.0.2")]
-    [Description("Disables the recycle efficiency and returns recyclers back to green.")]
+    [Info("Disable Recycle Efficiency", "Mabel", "1.0.0")]
+    [Description("Disables the recycle efficiency.")]
 
     public class DisableRecycleEfficiency : RustPlugin
     {
