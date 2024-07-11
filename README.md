@@ -17,6 +17,10 @@ Admin console command: drop.admin <playername or steamid>
 
 **DisableRecycleEfficiency** - Sets all recyclers back to the old efficiency (UI Remains as its client side)
 
+**CloseMonumentDoors** - Closes Monument Doors on server start or via console command (Command:`closedoors`)
+
+**FreshPump** - Converts Salt Water --> Fresh Water in water pumps
+
 
 
 
