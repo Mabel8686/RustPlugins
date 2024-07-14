@@ -155,7 +155,7 @@ npcgifts_wipe
   "Version": {
     "Major": 1,
     "Minor": 0,
-    "Patch": 4
+    "Patch": 5
   }
 }
 ```
