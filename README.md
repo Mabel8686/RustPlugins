@@ -106,9 +106,15 @@ oxide.grant group <groupname> <permission>
 oxide.grant user Mabel npcgifts.example1
 ```
  
-# **Default Configuration**
-```cs
+# **Console Command**
 
+```cs
+npcgifts_wipe
+```
+
+# **Default Configuration**
+
+```cs
 {
   "Cooldown Settings": {
     "Cooldown Duration Minutes": 60
