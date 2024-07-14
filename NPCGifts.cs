@@ -1,3 +1,12 @@
+/*
+Copyright © 2024 Mabel
+
+All rights reserved. This plugin is protected by copyright law.
+
+You may not modify, redistribute, or resell this software without explicit written permission from the copyright owner.
+
+For any support plaese message me directly via Discord `mabel8686`
+*/
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,7 +17,7 @@ using Oxide.Core.Plugins;
 
 namespace Oxide.Plugins
 {
-    [Info("NPC Gifts", "Mabel", "1.0.4")]
+    [Info("NPC Gifts", "Mabel", "1.0.5")]
     [Description("Set a chance to spawn a gift for players for killing NPC")]
 	
     class NPCGifts : RustPlugin
@@ -257,7 +266,7 @@ namespace Oxide.Plugins
             {
                 if (!HasCooldown(player.userID))
                 {
-                    SpawnRandomContainer(entity.transform.position, player.userID);
+                    SpawnRandomContainer(entity.transform.position, (ulong)player.userID);
                     SetCooldown(player.userID);
                 }
             }
@@ -268,6 +277,7 @@ namespace Oxide.Plugins
             if (containerList == null || containerList.Count == 0) return;
 
             random = new System.Random();
+            BasePlayer player = BasePlayer.FindByID(playerID);
 
             foreach (var containerData in containerList.Where(c => c.Enabled))
             {
@@ -283,7 +293,6 @@ namespace Oxide.Plugins
                             spawnedContainers.Add(container);
                             GetSetItems(container, containerData.tableName, containerData.minAmount, containerData.maxAmount, 1f);
 
-                            BasePlayer player = BasePlayer.FindByID(playerID);
                             if (player != null)
                             {
                                 if (config.MessageSettings.chat)
@@ -299,7 +308,6 @@ namespace Oxide.Plugins
                             }
                         }
                     }
-                    break;
                 }
             }
         }
@@ -320,7 +328,6 @@ namespace Oxide.Plugins
                 if (elapsedTime.TotalMinutes >= cooldownDurationMinutes)
                 {
                     lastSpawnTimes.Remove(playerID);
-                    //Puts("Removed Cooldown for: " + playerID);
                     SaveCooldownData();
                     return false;
                 }
@@ -379,6 +386,22 @@ namespace Oxide.Plugins
         {
             lastSpawnTimes.Clear();
             SaveCooldownData();
+        }
+		
+		[ConsoleCommand("npcgifts_wipe")]
+        private void WipeData(ConsoleSystem.Arg arg)
+        {
+            if (arg.Args == null)
+            {
+                ResetData();
+            }
+        }
+
+        private void ResetData()
+        {
+            lastSpawnTimes.Clear();
+            SaveCooldownData();
+            Puts("All player cooldowns have been reset...");
         }
     }
 }
