@@ -41,7 +41,7 @@ Different container types with individual spawn chances.
 
 Permission-based access to specific container types.
 
-*Configurable messages for chat and game tips.
+Configurable messages for chat and game tips.
 
 
 # **Configuration Options**
@@ -168,6 +168,8 @@ npcgifts_wipe
   "GameTipMessage": "Congratulations <color=#abf229>{0}</color> You Received A Gift From <color=#abf229>{1}</color>"
 }
 ```
+
+
 
 
 # SERVER POP
