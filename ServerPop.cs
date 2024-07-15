@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Server Pop", "Mabel", "1.0.8")]
+    [Info("Server Pop", "Mabel", "1.1.0")]
     [Description("Show server pop in chat with !pop trigger.")]
 
     public class ServerPop : RustPlugin
@@ -34,6 +34,9 @@ namespace Oxide.Plugins
 
             [JsonProperty(PropertyName = "Connect Settings")]
             public ConnectSettings ConnectSettings { get; set; }
+
+            [JsonProperty(PropertyName = "Wipe Response Settings")]
+            public WipeSettings WipeSettings { get; set; }
 
             public Core.VersionNumber Version { get; set; }
         }
@@ -85,7 +88,20 @@ namespace Oxide.Plugins
 
             [JsonProperty(PropertyName = "Show Welcome Message")]
             public bool showWelcomeMessage { get; set; }
+
+            [JsonProperty(PropertyName = "Show Wipe On Connect")]
+            public bool showWipeOnConnect { get; set; }
         }
+
+        public class WipeSettings
+        {
+            [JsonProperty(PropertyName = "Wipe Timer Enabled")]
+            public bool wipeTimerEnabled { get; set; }
+
+            [JsonProperty(PropertyName = "Wipe Timer (epoch)")]
+            public long wipeTimer { get; set; }
+        }
+
         public static Configuration DefaultConfig()
         {
             return new Configuration
@@ -117,8 +133,14 @@ namespace Oxide.Plugins
                 {
                     showPopOnConnect = false,
                     showWelcomeMessage = false,
+                    showWipeOnConnect = false,
                 },
-             Version = new Core.VersionNumber()
+                WipeSettings = new WipeSettings()
+                {
+                    wipeTimerEnabled = false,
+                    wipeTimer = 0,
+                },
+                Version = new Core.VersionNumber()
             };
         }
         protected override void LoadConfig()
@@ -129,6 +151,13 @@ namespace Oxide.Plugins
                 config = Config.ReadObject<Configuration>();
                 if (config == null) LoadDefaultConfig();
                 SaveConfig();
+
+                if (config.WipeSettings == null)
+                {
+                    config.WipeSettings = new WipeSettings();
+                    config.WipeSettings.wipeTimerEnabled = false;
+                    config.WipeSettings.wipeTimer = 0;
+                }
 
                 if (config.Version < Version)
                     UpdateConfig();
@@ -157,7 +186,11 @@ namespace Oxide.Plugins
             PrintWarning("Config update completed!");
         }
 
-        protected override void LoadDefaultConfig() => config = DefaultConfig();
+        protected override void LoadDefaultConfig()
+        {
+            config = DefaultConfig();
+            PrintWarning("Default configuration has been loaded....");
+        }
         protected override void SaveConfig() => Config.WriteObject(config);
 
         protected override void LoadDefaultMessages()
@@ -169,7 +202,8 @@ namespace Oxide.Plugins
                 ["Joining"] = "{0} players joining",
                 ["Queued"] = "{0} players queued",
                 ["WelcomeMessage"] = "Welcome to the server {0}!",
-                ["CooldownMessage"] = "You must wait {0} seconds before using this command again."
+                ["CooldownMessage"] = "You must wait {0} seconds before using this command again.",
+                ["WipeMessage"] = "Next wipe in: {0}"
             }, this);
         }
 
@@ -189,22 +223,76 @@ namespace Oxide.Plugins
                     {
                         Player.Message(player, welcomeMessage, config.ChatSettings.chatSteamID);
                     }
-                    else if (config.MessageSettings.toast)
+                    if (config.MessageSettings.toast)
                     {
                         player.ShowToast(GameTip.Styles.Blue_Long, welcomeMessage);
                     }
                 }
             }
-            
-            if (config.ConnectSettings.showPopOnConnect && config.MessageSettings.chat)
+
+            if (config.ConnectSettings.showPopOnConnect) timer.Once(8f, () =>
             {
-                SendMessage(player);
-            }
-            else if(config.ConnectSettings.showPopOnConnect && config.MessageSettings.toast && toastMessages.Count > 0)
+                if (config.ConnectSettings.showPopOnConnect && config.MessageSettings.chat)
+                {
+                    SendMessage(player);
+                }
+
+                if (config.ConnectSettings.showPopOnConnect && config.MessageSettings.toast)
+                {
+                    if (config.ResponseSettings.showOnlinePlayers)
+                    {
+                        string onlinePlayersText = $"{BasePlayer.activePlayerList.Count} / {ConVar.Server.maxplayers}";
+                        string onlineMessage = $"{lang.GetMessage("Online", this)}";
+                        onlineMessage = string.Format(onlineMessage, ApplyColor(BasePlayer.activePlayerList.Count.ToString(), config.MessageSettings.valueColor), ApplyColor(ConVar.Server.maxplayers.ToString(), config.MessageSettings.valueColor));
+                        toastMessages.Add(onlineMessage);
+                    }
+
+                    if (config.ResponseSettings.showSleepingPlayers)
+                    {
+                        string sleepingPlayersText = BasePlayer.sleepingPlayerList.Count.ToString();
+                        string sleepingMessage = $"{lang.GetMessage("Sleeping", this)}";
+                        sleepingMessage = string.Format(sleepingMessage, ApplyColor(BasePlayer.sleepingPlayerList.Count.ToString(), config.MessageSettings.valueColor));
+                        toastMessages.Add(sleepingMessage);
+                    }
+
+                    if (config.ResponseSettings.showJoiningPlayers)
+                    {
+                        string joiningPlayersText = ServerMgr.Instance.connectionQueue.Joining.ToString();
+                        string joiningMessage = $"{lang.GetMessage("Joining", this)}";
+                        joiningMessage = string.Format(joiningMessage, ApplyColor(ServerMgr.Instance.connectionQueue.Joining.ToString(), config.MessageSettings.valueColor));
+                        toastMessages.Add(joiningMessage);
+                    }
+
+                    if (config.ResponseSettings.showQueuedPlayers)
+                    {
+                        string queuedPlayersText = ServerMgr.Instance.connectionQueue.Queued.ToString();
+                        string queuedMessage = $"{lang.GetMessage("Queued", this)}";
+                        queuedMessage = string.Format(queuedMessage, ApplyColor(ServerMgr.Instance.connectionQueue.Queued.ToString(), config.MessageSettings.valueColor));
+                        toastMessages.Add(queuedMessage);
+                    }
+
+                    string toastMessage = string.Join("  ", toastMessages);
+                    player.ShowToast(GameTip.Styles.Blue_Long, toastMessage);
+                    Puts("Shown Pop On Connect");
+                }
+            });
+
+            if (config.ConnectSettings.showWipeOnConnect) timer.Once(16f, () =>
             {
-                string toastMessage = string.Join("  ", toastMessages);
-                player.ShowToast(GameTip.Styles.Blue_Long, toastMessage);
-            }
+                string wipeTimerDisplay = GetWipeTime(config.WipeSettings);
+                string wipeMessage = lang.GetMessage("WipeMessage", this);
+                wipeMessage = string.Format(wipeMessage, wipeTimerDisplay);
+
+                if (config.ConnectSettings.showWipeOnConnect && config.MessageSettings.chat)
+                {
+                    Player.Message(player, wipeMessage, null, config.ChatSettings.chatSteamID);
+                }
+
+                if (config.ConnectSettings.showWipeOnConnect && config.MessageSettings.toast)
+                {
+                    player.ShowToast(GameTip.Styles.Blue_Long, wipeMessage);
+                }
+            });
         }
 
         private void OnPlayerChat(BasePlayer player, string message, Chat.ChatChannel channel)
@@ -227,11 +315,58 @@ namespace Oxide.Plugins
                     {
                         Player.Message(player, cooldownMessage, config.ChatSettings.chatSteamID);
                     }
-                    else if (config.MessageSettings.toast)
+                    if (config.MessageSettings.toast)
                     {
                         player.ShowToast(GameTip.Styles.Blue_Long, cooldownMessage);
                     }
                  return;
+                }
+            }
+
+            else if (config.WipeSettings.wipeTimerEnabled)
+            if (message.ToLower() == "!wipe")
+            {
+                if (CanUseTrigger(player.userID))
+                {
+                        string wipeTimerDisplay = GetWipeTime(config.WipeSettings);
+                        string wipeMessage = lang.GetMessage("WipeMessage", this);
+                        wipeMessage = string.Format(wipeMessage, wipeTimerDisplay);
+
+                    if (config.MessageSettings.chat)
+                    {
+                        Player.Message(player, wipeMessage, null, config.ChatSettings.chatSteamID);
+                    }
+                    if (config.MessageSettings.globalResponse && config.MessageSettings.chat)
+                    {
+                        Player.Message(player, wipeMessage, null, config.ChatSettings.chatSteamID);
+                    }
+                    if (config.MessageSettings.toast)
+                    {
+                        player.ShowToast(GameTip.Styles.Blue_Long, wipeMessage);
+                    }
+                    if (config.MessageSettings.globalResponse && config.MessageSettings.toast)
+                    {
+                        player.ShowToast(GameTip.Styles.Blue_Long, wipeMessage);
+                    }
+
+                    cooldowns[player.userID] = DateTime.Now.AddSeconds(config.CooldownSettings.cooldownSeconds);
+                    return;
+                }
+                else
+                {
+                    TimeSpan remainingCooldown = cooldowns[player.userID] - DateTime.Now;
+                    string cooldownMessage = lang.GetMessage("CooldownMessage", this);
+                    cooldownMessage = string.Format(cooldownMessage, ApplyColor(Math.Round(remainingCooldown.TotalSeconds).ToString(), config.MessageSettings.valueColor));
+
+                    if (config.MessageSettings.chat)
+                    {
+                        Player.Message(player, cooldownMessage, config.ChatSettings.chatSteamID);
+                    }
+                    if (config.MessageSettings.toast)
+                    {
+                        player.ShowToast(GameTip.Styles.Blue_Long, cooldownMessage);
+                    }
+                return;
                 }
             }
         }
@@ -337,7 +472,21 @@ namespace Oxide.Plugins
         }
         private bool RemoveMessage(string message)
         {
-            return message.ToLower().Contains("!pop");
+            return message.ToLower().Contains("!pop") || message.ToLower().Contains("!wipe");
+        }
+
+        private string GetWipeTime(WipeSettings timer)
+        {
+            if (timer.wipeTimer <= 0)
+                return ApplyColor("0", config.MessageSettings.valueColor);
+
+            TimeSpan timeSpan = TimeSpan.FromSeconds(timer.wipeTimer - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            if (timeSpan.TotalSeconds <= 0)
+                return ApplyColor("0", config.MessageSettings.valueColor);
+
+            return $"{ApplyColor(timeSpan.Days.ToString(), config.MessageSettings.valueColor)} Days " +
+                   $"{ApplyColor(timeSpan.Hours.ToString(), config.MessageSettings.valueColor)} Hours " +
+                   $"{ApplyColor(timeSpan.Minutes.ToString(), config.MessageSettings.valueColor)} Minutes";
         }
     }
 }
