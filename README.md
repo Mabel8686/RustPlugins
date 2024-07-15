@@ -257,7 +257,6 @@ Auto filters the !pop trigger so it isn't displayed in the chat **(Reqs BetterCh
 
    **• Show Queued Players:** Show the number of players in the queue.
 
- 
 
 **Connect Settings**
 
@@ -265,7 +264,22 @@ Auto filters the !pop trigger so it isn't displayed in the chat **(Reqs BetterCh
 
    **• Show Welcome Message:** Show a welcome message when a player connects.
 
+   **• Show Wipe On Connect:** Show wipe timer when a player connects.
 
+**Wipe Settings**
+
+   **• Wipe Timer Enabled:** Enable the use of !wipe trigger to display wipe timer
+
+   **• Wipe Timer (epoch):** Set the time till wipe using <a href="https://www.epochconverter.com/">Epoch Time Stamp. 
+
+
+# **Triggers:**
+
+```cs
+!pop - displays server population
+
+!wipe - displays wipe time
+```
 
 # **Default Configuration:**
 
@@ -279,7 +293,7 @@ Auto filters the !pop trigger so it isn't displayed in the chat **(Reqs BetterCh
     "Chat Icon SteamID": 76561199216745230
   },
   "Messgae Settings": {
-    "Global Response (true = global response, false = player response)": false,
+    "Global Response (true = global response, false = player response)": true,
     "Use Chat Response": false,
     "Use Game Tip Response": true,
     "Value Color (HEX)": "#FFA500"
@@ -292,12 +306,17 @@ Auto filters the !pop trigger so it isn't displayed in the chat **(Reqs BetterCh
   },
   "Connect Settings": {
     "Show Pop On Connect": false,
-    "Show Welcome Message": false
+    "Show Welcome Message": false,
+    "Show Wipe On Connect": false
+  },
+  "Wipe Response Settings": {
+    "Wipe Timer Enabled": false,
+    "Wipe Timer (epoch)": 0
   },
   "Version": {
     "Major": 1,
-    "Minor": 0,
-    "Patch": 8
+    "Minor": 1,
+    "Patch": 0
   }
 }
 ```
@@ -310,6 +329,7 @@ Auto filters the !pop trigger so it isn't displayed in the chat **(Reqs BetterCh
   "Joining": "{0} players joining",
   "Queued": "{0} players queued",
   "WelcomeMessage": "Welcome to the server {0}!",
-  "CooldownMessage": "You must wait {0} seconds before using this command again."
+  "CooldownMessage": "You must wait {0} seconds before using this command again.",
+  "WipeMessage": "Next wipe in: {0}"
 }
 ```
