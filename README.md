@@ -1,25 +1,27 @@
 # RustPlugins
 
-**DropInventory** - Useful plugin for BattleField type servers, allows players with permission to drop there inventory to claim kits faster or can be used by Admins to clear players inventory 
+**Drop Inventory** - Useful plugin for BattleField type servers, allows players with permission to drop there inventory to claim kits faster or can be used by Admins to clear players inventory 
  ```cs
 Players chat command: /drop
 Admin chat command: /drop.admin <playername or steamid>
 Admin console command: drop.admin <playername or steamid>
 ```
 
-**MLRSCooldown** - Prevents players mounting the mlrs after use for x amount of time (default 20 minutes), useful for servers with multiple Mlrs
+**MLRS Cooldown** - Prevents players mounting the mlrs after use for x amount of time (default 20 minutes), useful for servers with multiple Mlrs
 
-**MLRSOwnership** - Prevents players who are not the owner or a team member of the owner from using the MLRS, useful for servers with multiple Mlrs
+**MLRS Ownership** - Prevents players who are not the owner or a team member of the owner from using the MLRS, useful for servers with multiple Mlrs
 
-**NoLockOnRockets** - prevents players without the bypass permission from putting lock on rockets in there inventory
+**No LockOnRockets** - prevents players without the bypass permission from putting lock on rockets in there inventory
 
-**BlackjackFix** - Fixes Blackjack spawned in wrong rotation
+**Blackjack Fix** - Fixes Blackjack spawned in wrong rotation
 
-**DisableRecycleEfficiency** - Sets all recyclers back to the old efficiency (UI Remains as its client side)
+**Disable Recycle Efficiency** - Sets all recyclers back to the old efficiency (UI Remains as its client side)
 
-**CloseMonumentDoors** - Closes Monument Doors on server start or via console command (Command:`closedoors`)
+**Close Monument Doors** - Closes Monument Doors on server start or via console command (Command:`closedoors`)
 
-**FreshPump** - Converts Salt Water --> Fresh Water in water pumps
+**Fresh Pump** - Converts Salt Water --> Fresh Water in water pumps
+
+**Quarry Notification** - Broadcasts when a player activates quarrys & excavtor, with player name and grid location (encourges more pvp)
 
 
 
