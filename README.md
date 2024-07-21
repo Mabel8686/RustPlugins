@@ -23,7 +23,7 @@ Admin console command: drop.admin <playername or steamid>
 
 **Quarry Notification** - Broadcasts when a player activates quarrys & excavtor, with player name and grid location (encourges more pvp)
 
-
+**Kill CargoShip** - Kills Bugged Cargo Ships on server restarts
 
 
 
