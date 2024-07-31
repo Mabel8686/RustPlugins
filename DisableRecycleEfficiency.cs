@@ -1,15 +1,28 @@
 using System.Collections.Generic;
+using Oxide.Core;
 
 namespace Oxide.Plugins
 {
-    [Info("Disable Recycle Efficiency", "Mabel", "1.0.0")]
+    [Info("Disable Recycle Efficiency", "Mabel", "1.0.1")]
     [Description("Disables the recycle efficiency.")]
-
     public class DisableRecycleEfficiency : RustPlugin
     {
         private const float DisabledRecycleEfficiency = 0.5f;
 
-        private Dictionary<ulong, bool> recyclerOriginalStates = new Dictionary<ulong, bool>();
+        private class RecyclerState
+        {
+            public float RecycleEfficiency { get; set; }
+            public float SafezoneRecycleEfficiency { get; set; }
+            public float RadtownRecycleEfficiency { get; set; }
+            public bool OriginalFlagState { get; set; }
+        }
+
+        private Dictionary<ulong, RecyclerState> recyclerOriginalStates = new Dictionary<ulong, RecyclerState>();
+
+        private void Init()
+        {
+            LoadData();
+        }
 
         private void OnServerInitialized()
         {
@@ -17,7 +30,7 @@ namespace Oxide.Plugins
             {
                 if (entity is Recycler recycler)
                 {
-                    recyclerOriginalStates[recycler.net.ID.Value] = recycler.HasFlag(BaseEntity.Flags.Reserved9);
+                    SaveOriginalState(recycler);
                     DisableEfficiency(recycler);
                     recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
                 }
@@ -28,9 +41,24 @@ namespace Oxide.Plugins
         {
             if (entity is Recycler recycler)
             {
-                recyclerOriginalStates[recycler.net.ID.Value] = recycler.HasFlag(BaseEntity.Flags.Reserved9);
+                SaveOriginalState(recycler);
                 DisableEfficiency(recycler);
                 recycler.SetFlag(BaseEntity.Flags.Reserved9, false, false);
+            }
+        }
+
+        private void SaveOriginalState(Recycler recycler)
+        {
+            if (!recyclerOriginalStates.ContainsKey(recycler.net.ID.Value))
+            {
+                recyclerOriginalStates[recycler.net.ID.Value] = new RecyclerState
+                {
+                    RecycleEfficiency = recycler.recycleEfficiency,
+                    SafezoneRecycleEfficiency = recycler.safezoneRecycleEfficiency,
+                    RadtownRecycleEfficiency = recycler.radtownRecycleEfficiency,
+                    OriginalFlagState = recycler.HasFlag(BaseEntity.Flags.Reserved9)
+                };
+                SaveData();
             }
         }
 
@@ -47,17 +75,42 @@ namespace Oxide.Plugins
             {
                 if (entity is Recycler recycler)
                 {
-                    recycler.recycleEfficiency = 0.6f;
-                    recycler.safezoneRecycleEfficiency = 0.4f;
-                    recycler.radtownRecycleEfficiency = 0.6f;
-
-                    if (recyclerOriginalStates.TryGetValue(recycler.net.ID.Value, out bool originalState))
-                    {
-                        recycler.SetFlag(BaseEntity.Flags.Reserved9, originalState, true, true);
-                    }
+                    RestoreOriginalState(recycler);
                 }
             }
-        recyclerOriginalStates.Clear();
+            recyclerOriginalStates.Clear();
+            SaveData();
         }
+
+        private void RestoreOriginalState(Recycler recycler)
+        {
+            if (recyclerOriginalStates.TryGetValue(recycler.net.ID.Value, out RecyclerState originalState))
+            {
+                recycler.recycleEfficiency = originalState.RecycleEfficiency;
+                recycler.safezoneRecycleEfficiency = originalState.SafezoneRecycleEfficiency;
+                recycler.radtownRecycleEfficiency = originalState.RadtownRecycleEfficiency;
+                recycler.SetFlag(BaseEntity.Flags.Reserved9, originalState.OriginalFlagState, true, true);
+            }
+        }
+
+        private void SaveData()
+        {
+            Interface.Oxide.DataFileSystem.WriteObject(Name, recyclerOriginalStates);
+        }
+
+        private void LoadData()
+        {
+            recyclerOriginalStates = Interface.Oxide.DataFileSystem.ReadObject<Dictionary<ulong, RecyclerState>>(Name) ?? new Dictionary<ulong, RecyclerState>();
+        }
+
+        private void NewSave()
+        {
+            recyclerOriginalStates.Clear(); SaveData(); Puts("Recycler states data has been wiped.");
+        }
+
+        [ConsoleCommand("dre_wipe")]
+        private void WipeRecyclerData(ConsoleSystem.Arg arg) { if (arg.Args == null) { ResetData(); } }
+
+        private void ResetData() { recyclerOriginalStates.Clear(); SaveData(); Puts("Recycler states data has been wiped."); }
     }
 }
