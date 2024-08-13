@@ -1,3 +1,12 @@
+/*
+Copyright © 2024 Mabel
+
+All rights reserved. This plugin is protected by copyright law.
+
+You may not modify, redistribute, or resell this software without explicit written permission from the copyright owner.
+
+For any support please message me directly via Discord `mabel8686`
+*/
 using ConVar;
 using Network;
 using Newtonsoft.Json;
@@ -10,7 +19,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Server Pop", "Mabel", "1.1.0")]
+    [Info("Server Pop", "Mabel", "1.1.1")]
     [Description("Show server pop in chat with !pop trigger.")]
 
     public class ServerPop : RustPlugin
@@ -40,11 +49,13 @@ namespace Oxide.Plugins
 
             public Core.VersionNumber Version { get; set; }
         }
+		
         public class CooldownSettings
         {
             [JsonProperty(PropertyName = "Cooldown (seconds)")]
             public int cooldownSeconds { get; set; } = 60;
         }
+		
         public class ChatSettings
         {
             [JsonProperty(PropertyName = "Chat Prefix")]
@@ -53,6 +64,7 @@ namespace Oxide.Plugins
             [JsonProperty(PropertyName = "Chat Icon SteamID")]
             public ulong chatSteamID { get; set; } = 76561199216745239;
         }
+		
         public class MessageSettings
         {
             [JsonProperty(PropertyName = "Global Response (true = global response, false = player response)")]
@@ -67,6 +79,7 @@ namespace Oxide.Plugins
             [JsonProperty(PropertyName = "Value Color (HEX)")]
             public string valueColor { get; set; }
         }
+		
         public class ResponseSettings
         {
             [JsonProperty(PropertyName = "Show Online Players")]
@@ -81,6 +94,7 @@ namespace Oxide.Plugins
             [JsonProperty(PropertyName = "Show Queued Players")]
             public bool showQueuedPlayers { get; set; }
         }
+		
         public class ConnectSettings
         {
             [JsonProperty(PropertyName = "Show Pop On Connect")]
@@ -143,6 +157,7 @@ namespace Oxide.Plugins
                 Version = new Core.VersionNumber()
             };
         }
+		
         protected override void LoadConfig()
         {
             base.LoadConfig();
@@ -191,6 +206,7 @@ namespace Oxide.Plugins
             config = DefaultConfig();
             PrintWarning("Default configuration has been loaded....");
         }
+		
         protected override void SaveConfig() => Config.WriteObject(config);
 
         protected override void LoadDefaultMessages()
@@ -208,7 +224,7 @@ namespace Oxide.Plugins
         }
 
         private void OnPlayerConnected(BasePlayer player)
-        {
+        {  
             List<string> toastMessages = new List<string>();
 
             if (config.ConnectSettings.showWelcomeMessage)
@@ -272,7 +288,7 @@ namespace Oxide.Plugins
                     }
 
                     string toastMessage = string.Join("  ", toastMessages);
-                    player.ShowToast(GameTip.Styles.Blue_Long, toastMessage);
+                    player.ShowToast(GameTip.Styles.Blue_Long, toastMessage); 
                     Puts("Shown Pop On Connect");
                 }
             });
@@ -315,6 +331,7 @@ namespace Oxide.Plugins
                     {
                         Player.Message(player, cooldownMessage, config.ChatSettings.chatSteamID);
                     }
+					
                     if (config.MessageSettings.toast)
                     {
                         player.ShowToast(GameTip.Styles.Blue_Long, cooldownMessage);
@@ -332,19 +349,22 @@ namespace Oxide.Plugins
                         string wipeMessage = lang.GetMessage("WipeMessage", this);
                         wipeMessage = string.Format(wipeMessage, wipeTimerDisplay);
 
-                    if (config.MessageSettings.chat)
-                    {
-                        Player.Message(player, wipeMessage, null, config.ChatSettings.chatSteamID);
-                    }
                     if (config.MessageSettings.globalResponse && config.MessageSettings.chat)
                     {
                         Player.Message(player, wipeMessage, null, config.ChatSettings.chatSteamID);
                     }
-                    if (config.MessageSettings.toast)
+					
+                    if (!config.MessageSettings.globalResponse && config.MessageSettings.chat)
+                    {
+                        Player.Message(player, wipeMessage, null, config.ChatSettings.chatSteamID);
+                    }
+					
+                    if (config.MessageSettings.globalResponse && config.MessageSettings.toast)
                     {
                         player.ShowToast(GameTip.Styles.Blue_Long, wipeMessage);
                     }
-                    if (config.MessageSettings.globalResponse && config.MessageSettings.toast)
+					
+                    if (!config.MessageSettings.globalResponse && config.MessageSettings.toast)
                     {
                         player.ShowToast(GameTip.Styles.Blue_Long, wipeMessage);
                     }
@@ -362,6 +382,7 @@ namespace Oxide.Plugins
                     {
                         Player.Message(player, cooldownMessage, config.ChatSettings.chatSteamID);
                     }
+					
                     if (config.MessageSettings.toast)
                     {
                         player.ShowToast(GameTip.Styles.Blue_Long, cooldownMessage);
@@ -423,7 +444,7 @@ namespace Oxide.Plugins
                 Server.Broadcast(popMessage.ToString(), null, config.ChatSettings.chatSteamID);
             }
 
-            if (config.MessageSettings.chat)
+            if (!config.MessageSettings.globalResponse && config.MessageSettings.chat)
             {
                 Player.Message(player, popMessage.ToString(), null, config.ChatSettings.chatSteamID);
             }
@@ -433,7 +454,7 @@ namespace Oxide.Plugins
                 SendToastToActivePlayers(toastMessages);
             }
 
-            if (config.MessageSettings.toast && toastMessages.Count > 0)
+            if (!config.MessageSettings.globalResponse && config.MessageSettings.toast && toastMessages.Count > 0)
             {
                 string toastMessage = string.Join("  ", toastMessages);
                 player.ShowToast(GameTip.Styles.Blue_Long, toastMessage);
@@ -470,6 +491,7 @@ namespace Oxide.Plugins
 
             return messageData;
         }
+		
         private bool RemoveMessage(string message)
         {
             return message.ToLower().Contains("!pop") || message.ToLower().Contains("!wipe");
