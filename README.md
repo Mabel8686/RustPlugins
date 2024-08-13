@@ -320,7 +320,7 @@ Auto filters the !pop trigger so it isn't displayed in the chat **(Reqs BetterCh
   "Version": {
     "Major": 1,
     "Minor": 1,
-    "Patch": 0
+    "Patch": 1
   }
 }
 ```
